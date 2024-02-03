@@ -10,14 +10,9 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <!-- Elemen Root -->
-  <div id="root"></div>
-
-  <!-- Bagian JavaScript -->
   <script>
     // Kelas untuk merepresentasikan Barang
     class Barang {
-      // Konstruktor untuk kelas Barang
       constructor(nama, harga, stok) {
         this.nama = nama;
         this.harga = harga;
@@ -26,57 +21,94 @@
       }
     }
 
-    // Kelas Aplikasi Utama
-    class App {
-      // Konstruktor untuk kelas App
-      constructor() {
-        this.daftarBarang = [];
-        this.editIndex = null;
+    // Kelas untuk mengelola komunikasi antara komponen HTML dan logika aplikasi
+    class AppUI {
+      constructor(app) {
+        this.app = app;
+        this.init();
       }
 
-      // Metode untuk menambahkan Barang baru ke daftar
-      addBarang() {
-        // Dapatkan elemen input
-        const namaInput = document.getElementById('nama');
-        const hargaInput = document.getElementById('harga');
-        const stokInput = document.getElementById('stok');
+      init() {
+        const container = document.createElement('div');
+        container.className = 'container';
+        container.innerHTML = `
+          <div class="app-title">
+            <h1>APLIKASI KASIR ELEKTRONIK</h1>
+          </div>
+          <div class="row">
+            <!-- Form untuk menambah/mengedit Barang -->
+            <div class="col-md-6">
+              <div class="card">
+                <div class="card-header">Tambah Barang</div>
+                <div class="card-body form-container">
+                  <form>
+                    <div class="mb-3">
+                      <label for="namaBarang" class="form-label">Nama Barang</label>
+                      <input type="text" class="form-control" id="nama" placeholder="Masukkan nama barang">
+                    </div>
+                    <div class="mb-3">
+                      <label for="harga" class="form-label">Harga</label>
+                      <input type="number" class="form-control" id="harga" placeholder="Masukkan harga barang" onkeypress="app.allowNumbersOnly(event)">
+                    </div>
+                    <div class="mb-3">
+                      <label for="stok" class="form-label">Stok</label>
+                      <input type="number" class="form-control" id="stok" placeholder="Masukkan stok barang" onkeypress="app.allowNumbersOnly(event)">
+                    </div>
+                    <button type="button" id="tambah-update-btn" class="btn btn-primary">Tambah</button>
+                    <button type="button" class="btn btn-warning" id="reset-btn">Reset</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+            <!-- Daftar Barang -->
+            <div class="col-md-6">
+              <div class="card">
+                <div class="card-header">Daftar Barang</div>
+                <div class="card-body data-container">
+                  <table class="table table-bordered">
+                    <thead>
+                      <tr>
+                        <th>Nama</th>
+                        <th>Stok</th>
+                        <th>Harga</th>
+                        <th>Total Harga</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="daftar-barang-container"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Total Harga -->
+          <div class="row">
+            <div class="col-md-12">
+              <div class="card">
+                <div class="card-header">Total Harga</div>
+                <div class="card-body total-container" id="total-harga-container"></div>
+              </div>
+            </div>
+          </div>
+        `;
 
-        // Ambil nilai dari input
-        const nama = namaInput.value;
-        const harga = parseFloat(hargaInput.value);
-        const stok = parseInt(stokInput.value);
+        document.body.appendChild(container);
 
-        // Periksa apakah nilai input valid
-        if (!isNaN(harga) && !isNaN(stok) && nama !== '') {
-          // Periksa apakah sedang mengedit Barang yang ada
-          if (this.editIndex !== null) {
-            // Perbarui Barang yang sudah ada
-            const updatedBarang = new Barang(nama, harga, stok);
-            this.daftarBarang[this.editIndex] = updatedBarang;
-            this.editIndex = null; 
-          } else {
-            // Tambahkan Barang baru ke daftar
-            const newBarang = new Barang(nama, harga, stok);
-            this.daftarBarang.push(newBarang);
-          }
+        // Event listeners menggunakan addEventListener
+        document.getElementById('tambah-update-btn').addEventListener('click', () => this.app.addBarang());
+        document.getElementById('reset-btn').addEventListener('click', () => this.app.resetForm());
+        document.getElementById('harga').addEventListener('keypress', (event) => this.app.allowNumbersOnly(event));
+        document.getElementById('stok').addEventListener('keypress', (event) => this.app.allowNumbersOnly(event));
 
-          // Render daftar Barang
-          this.renderDaftarBarang();
-
-          // Bersihkan nilai input
-          namaInput.value = '';
-          hargaInput.value = '';
-          stokInput.value = '';
-          document.getElementById('tambah-update-btn').innerText = 'Tambah';
-        }
+        this.render(); // Render komponen saat aplikasi dimuat
       }
 
-      // Metode untuk merender daftar Barang ke dalam HTML
-      renderDaftarBarang() {
+      render() {
+        // Render komponen HTML menggunakan data dari logika aplikasi
         const daftarBarangContainer = document.getElementById('daftar-barang-container');
         daftarBarangContainer.innerHTML = '';
 
-        this.daftarBarang.forEach((barang, index) => {
+        this.app.daftarBarang.forEach((barang, index) => {
           const row = document.createElement('tr');
           row.innerHTML = `
             <td>${barang.nama}</td>
@@ -91,17 +123,16 @@
           daftarBarangContainer.appendChild(row);
         });
 
-        // Render bagian total harga
         this.renderTotalHarga();
       }
 
-      // Metode untuk merender bagian total harga
       renderTotalHarga() {
+        // Render total harga
         const totalHargaContainer = document.getElementById('total-harga-container');
         totalHargaContainer.innerHTML = '';
 
-        const totalHargaPerBarang = this.daftarBarang.map(barang => `${barang.nama}: ${barang.totalHarga}`);
-        const jumlahHargaKeseluruhan = this.calculateJumlahHargaKeseluruhan();
+        const totalHargaPerBarang = this.app.daftarBarang.map(barang => `${barang.nama}: ${barang.totalHarga}`);
+        const jumlahHargaKeseluruhan = this.app.calculateJumlahHargaKeseluruhan();
 
         totalHargaPerBarang.forEach(harga => {
           const p = document.createElement('p');
@@ -117,13 +148,64 @@
         p.textContent = jumlahHargaKeseluruhan;
         totalHargaContainer.appendChild(p);
       }
+    }
 
-      // Metode untuk menghitung total harga dari semua Barang
+    // Kelas Aplikasi Utama
+    class App {
+      constructor() {
+        this._daftarBarang = [];
+        this._editIndex = null;
+        this.appUI = new AppUI(this);
+      }
+
+      get daftarBarang() {
+        return this._daftarBarang;
+      }
+
+      set daftarBarang(value) {
+        this._daftarBarang = value;
+      }
+
+      get editIndex() {
+        return this._editIndex;
+      }
+
+      set editIndex(value) {
+        this._editIndex = value;
+      }
+
+      addBarang() {
+        const namaInput = document.getElementById('nama');
+        const hargaInput = document.getElementById('harga');
+        const stokInput = document.getElementById('stok');
+
+        const nama = namaInput.value;
+        const harga = parseFloat(hargaInput.value);
+        const stok = parseInt(stokInput.value);
+
+        if (!isNaN(harga) && !isNaN(stok) && nama !== '') {
+          if (this.editIndex !== null) {
+            const updatedBarang = new Barang(nama, harga, stok);
+            this.daftarBarang[this.editIndex] = updatedBarang;
+            this.editIndex = null;
+          } else {
+            const newBarang = new Barang(nama, harga, stok);
+            this.daftarBarang.push(newBarang);
+          }
+
+          this.appUI.render();
+          this.resetForm();
+        }
+      }
+
+      renderDaftarBarang() {
+        this.appUI.render();
+      }
+
       calculateJumlahHargaKeseluruhan() {
         return this.daftarBarang.reduce((total, barang) => total + barang.totalHarga, 0);
       }
 
-      // Metode untuk mengedit Barang yang sudah ada
       editBarang(index) {
         const barang = this.daftarBarang[index];
         document.getElementById('nama').value = barang.nama;
@@ -133,19 +215,15 @@
         document.getElementById('tambah-update-btn').innerText = 'Update';
       }
 
-      // Metode untuk menghapus Barang
       deleteBarang(index) {
         const confirmation = confirm('Apakah Anda yakin ingin menghapus barang ini?');
 
         if (confirmation) {
-          // Hapus Barang yang dipilih dari daftar
           this.daftarBarang.splice(index, 1);
-          // Render daftar yang telah diperbarui
           this.renderDaftarBarang();
         }
       }
 
-      // Metode untuk mereset formulir input
       resetForm() {
         document.getElementById('nama').value = '';
         document.getElementById('harga').value = '';
@@ -154,7 +232,6 @@
         document.getElementById('tambah-update-btn').innerText = 'Tambah';
       }
 
-      // Metode untuk mengizinkan hanya angka di beberapa input tertentu
       allowNumbersOnly(event) {
         const charCode = event.charCode;
         if (charCode < 48 || charCode > 57) {
@@ -163,77 +240,7 @@
       }
     }
 
-    // Membuat instance dari kelas App
     const app = new App();
-
-    // Event listener ketika DOM telah dimuat
-    document.addEventListener('DOMContentLoaded', function() {
-      // Membuat kontainer utama
-      const container = document.createElement('div');
-      container.className = 'container';
-      container.innerHTML = `
-        <div class="app-title">
-          <h1>APLIKASI KASIR ELEKTRONIK</h1>
-        </div>
-        <div class="row">
-          <!-- Form untuk menambah/mengedit Barang -->
-          <div class="col-md-6">
-            <div class="card">
-              <div class="card-header">Tambah Barang</div>
-              <div class="card-body form-container">
-                <form>
-                  <div class="mb-3">
-                    <label for="namaBarang" class="form-label">Nama Barang</label>
-                    <input type="text" class="form-control" id="nama" placeholder="Masukkan nama barang">
-                  </div>
-                  <div class="mb-3">
-                    <label for="harga" class="form-label">Harga</label>
-                    <input type="number" class="form-control" id="harga" placeholder="Masukkan harga barang" onkeypress="app.allowNumbersOnly(event)">
-                  </div>
-                  <div class="mb-3">
-                    <label for="stok" class="form-label">Stok</label>
-                    <input type="number" class="form-control" id="stok" placeholder="Masukkan stok barang" onkeypress="app.allowNumbersOnly(event)">
-                  </div>
-                  <button type="button" id="tambah-update-btn" class="btn btn-primary" onclick="app.addBarang()">Tambah</button>
-                  <button type="button" class="btn btn-warning" onclick="app.resetForm()">Reset</button>
-                </form>
-              </div>
-            </div>
-          </div>
-          <!-- Daftar Barang -->
-          <div class="col-md-6">
-            <div class="card">
-              <div class="card-header">Daftar Barang</div>
-              <div class="card-body data-container">
-                <table class="table table-bordered">
-                  <thead>
-                    <tr>
-                      <th>Nama</th>
-                      <th>Stok</th>
-                      <th>Harga</th>
-                      <th>Total Harga</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody id="daftar-barang-container"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- Total Harga -->
-        <div class="row">
-          <div class="col-md-12">
-            <div class="card">
-              <div class="card-header">Total Harga</div>
-              <div class="card-body total-container" id="total-harga-container"></div>
-            </div>
-          </div>
-        </div>
-      `;
-
-      document.body.appendChild(container);
-    });
   </script>
 
   <!-- Bootstrap JavaScript -->
