@@ -73,6 +73,13 @@ body {
     margin: 0 auto;
   }
 
+  @media (max-width: 767px) {
+  .form-container form {
+      width: 300px;
+      padding: 0 auto;
+    }
+  }
+
   .data-container {
     margin-top: 20px;
   }
